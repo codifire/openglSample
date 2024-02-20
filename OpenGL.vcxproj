@@ -168,8 +168,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommonGL.h" />
+    <ClInclude Include="CShader.h" />
     <ClInclude Include="Extern\glad\debug\include\glad\glad.h" />
     <ClInclude Include="Extern\glad\debug\include\KHR\khrplatform.h" />
+    <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

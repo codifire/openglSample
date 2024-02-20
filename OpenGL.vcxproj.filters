@@ -35,5 +35,11 @@
     <ClInclude Include="Extern\glad\debug\include\glad\glad.h">
       <Filter>Glad</Filter>
     </ClInclude>
+    <ClInclude Include="CShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
