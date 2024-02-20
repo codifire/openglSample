@@ -21,24 +21,24 @@
     <ClCompile Include="OpenGL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Extern\glad\src\glad.c">
-      <Filter>Glad</Filter>
+    <ClCompile Include="Extern\glad\debug\src\glad.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommonGL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Extern\glad\include\glad\glad.h">
-      <Filter>Glad</Filter>
-    </ClInclude>
-    <ClInclude Include="Extern\glad\include\KHR\khrplatform.h">
-      <Filter>Glad</Filter>
-    </ClInclude>
     <ClInclude Include="CShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\glad\debug\include\glad\glad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern\glad\debug\include\KHR\khrplatform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
