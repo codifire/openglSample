@@ -6,6 +6,8 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
+static float value = 0.2f;
+
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -27,27 +29,29 @@ const char* fragmentShaderSource = "#version 330 core\n"
 "in vec3 vertexColor;\n"
 "in vec2 TexCoord;\n"
 "uniform vec4 ourColor;\n"
-"uniform sampler2D ourTexture;\n"
+"uniform float textureInterpolation;\n"
+"uniform sampler2D texture1;\n"
+"uniform sampler2D texture2;\n"
 "void main()\n"
 "{\n"
-"   FragColor = texture(ourTexture, TexCoord) * vec4(vertexColor, 1.0);\n"
+"   FragColor = mix(texture(texture1, TexCoord), texture(texture2, vec2(1.0 - TexCoord.x, TexCoord.y)), textureInterpolation);\n"
 "}\n\0";
 
-void LoadTexture(unsigned int& texture) {
+void LoadTexture(unsigned int& texture, const char* resourcePath, GLenum format, GLint wrapping) {
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	// set the texture wrapping/filtering options (on the currently bound texture object)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapping);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapping);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// load and generate the texture
 	int width, height, nrChannels;
 	stbi_set_flip_vertically_on_load(true);
-	unsigned char* data = stbi_load("texture/statue_1280.jpg", &width, &height, &nrChannels, 0);
+	unsigned char* data = stbi_load(resourcePath, &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
@@ -186,9 +190,19 @@ int main()
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 
-	// load and create a texture 
-	unsigned int texture;
-	LoadTexture(texture);
+	// load and create a textures
+	unsigned int texture1;
+	LoadTexture(texture1, "texture/container.jpg", GL_RGB, GL_REPEAT);
+
+	unsigned int texture2;
+	LoadTexture(texture2, "texture/awesomeface.png", GL_RGBA, GL_REPEAT);
+
+	glUseProgram(shaderProgram);
+	glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
+	glUniform1i(glGetUniformLocation(shaderProgram, "texture2"), 1);
+	
+	glUniform1f(glGetUniformLocation(shaderProgram, "textureInterpolation"), 0.2f);
+
 
 	// render loop
 	// -----------
@@ -213,7 +227,14 @@ int main()
 		float timeValue = static_cast<float>(glfwGetTime());
 		float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
 		glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-		glBindTexture(GL_TEXTURE_2D, texture);
+
+		glUniform1f(glGetUniformLocation(shaderProgram, "textureInterpolation"), value);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+
 		glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 		//glDrawArrays(GL_TRIANGLES, 0, 6);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -243,6 +264,21 @@ void processInput(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+	{
+		value += 0.001f;
+		if (value >= 1.0f) {
+			value = 1.0f;
+		}
+	}
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+	{
+		value -= 0.001f;
+		if (value <= 0.0f) {
+			value = 0.0f;
+		}
+	}
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
