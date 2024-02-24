@@ -65,6 +65,8 @@ void LoadTexture(unsigned int& texture, const char* resourcePath, GLenum format,
 
 int main()
 {
+	using namespace std::chrono;
+
 	// glfw: initialize and configure
 	// ------------------------------
 	glfwInit();
@@ -141,10 +143,10 @@ int main()
 	// ------------------------------------------------------------------
 	float vertices[] = {
 		// positions          // colors           // texture coords
-		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+		 0.25f,  0.25f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+		 0.25f, -0.25f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+		-0.25f, -0.25f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+		-0.25f,  0.25f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
 	};
 
 	unsigned int indices[] = {  // note that we start from 0!
@@ -206,19 +208,34 @@ int main()
 	glUniform1f(glGetUniformLocation(shaderProgram, "textureInterpolation"), 0.2f);
 
 	//Perform Transformations
-	glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -0.5f, 0.0f));
-	trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+	glm::mat4 trans = glm::mat4(1.0f);
+	trans = glm::rotate(trans, glm::radians(120.0f), glm::vec3(0.0, 0.0, 1.0));
+	trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
 	trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
 
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
+	unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");
+	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
 	// render loop
 	// -----------
 
 	int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+
+	using milliseconds = std::chrono::milliseconds;
+	using seconds = std::chrono::seconds;
+
+	auto lastFrameTime = high_resolution_clock::now();
+
+	float angle = 1.f;
 	
 	while (!glfwWindowShouldClose(window))
 	{
+		// compute delta time
+		auto currentTime = high_resolution_clock::now();
+		duration<float> delta = currentTime - lastFrameTime;
+		float deltaTime = delta.count(); // Delta time in seconds
+		lastFrameTime = currentTime;
+
 		// input
 		// -----
 		processInput(window);
@@ -228,35 +245,27 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		// draw our first triangle
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
-
-		// draw our first triangle
 		glUseProgram(shaderProgram);
 
-		float timeValue = static_cast<float>(glfwGetTime());
-
 		// create transformations
-		//glm::mat4 transform = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-		//transform = glm::rotate(transform, timeValue, glm::vec3(0.0f, 0.0f, 1.0f));
-		//transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
+		trans = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+		angle += 30.0f * deltaTime;
+		trans = glm::rotate(trans, glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
+		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
 		
-		
-		float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-		glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 		glUniform1f(glGetUniformLocation(shaderProgram, "textureInterpolation"), value);
 
-		/*unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));*/
-		
-		glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-		//glDrawArrays(GL_TRIANGLES, 0, 6);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		// glBindVertexArray(0); // no need to unbind it every time 
+		// seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //glDrawArrays(GL_TRIANGLES, 0, 6);
+		// glBindVertexArray(0); // no need to unbind it every time
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
