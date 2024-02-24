@@ -18,9 +18,10 @@ const char* vertexShaderSource = "#version 330 core\n"
 "layout (location = 2) in vec2 aTexCoord;\n"
 "out vec3 vertexColor;\n"
 "out vec2 TexCoord;\n"
+"uniform mat4 transform;\n"
 "void main()\n"
 "{\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"   gl_Position =  transform * vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
 "	vertexColor = aCol;\n"
 "   TexCoord = aTexCoord;\n"
 "}\0";
@@ -43,7 +44,7 @@ void LoadTexture(unsigned int& texture, const char* resourcePath, GLenum format,
 	// set the texture wrapping/filtering options (on the currently bound texture object)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapping);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapping);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// load and generate the texture
 	int width, height, nrChannels;
@@ -60,6 +61,7 @@ void LoadTexture(unsigned int& texture, const char* resourcePath, GLenum format,
 	}
 	stbi_image_free(data);
 }
+
 
 int main()
 {
@@ -203,6 +205,12 @@ int main()
 	
 	glUniform1f(glGetUniformLocation(shaderProgram, "textureInterpolation"), 0.2f);
 
+	//Perform Transformations
+	glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -0.5f, 0.0f));
+	trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+	trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
 
 	// render loop
 	// -----------
@@ -220,21 +228,31 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		// draw our first triangle
-		glUseProgram(shaderProgram);
-
-
-		float timeValue = static_cast<float>(glfwGetTime());
-		float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-		glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-
-		glUniform1f(glGetUniformLocation(shaderProgram, "textureInterpolation"), value);
-
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
+
+		// draw our first triangle
+		glUseProgram(shaderProgram);
+
+		float timeValue = static_cast<float>(glfwGetTime());
+
+		// create transformations
+		//glm::mat4 transform = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+		//transform = glm::rotate(transform, timeValue, glm::vec3(0.0f, 0.0f, 1.0f));
+		//transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
+		
+		
+		float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+		glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+		glUniform1f(glGetUniformLocation(shaderProgram, "textureInterpolation"), value);
+
+		/*unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));*/
+		
 		glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 		//glDrawArrays(GL_TRIANGLES, 0, 6);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
